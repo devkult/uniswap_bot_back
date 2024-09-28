@@ -1,0 +1,65 @@
+services:
+  postgres:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_DB: ${DB__DATABASE:-postgres}
+      POSTGRES_USER: ${DB__USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB__PASSWORD:-changeme}
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+    restart: unless-stopped
+  
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  redis:
+    container_name: redis_container
+    image: redis:alpine
+    command: redis-server --requirepass "${REDIS__PASSWORD:-redispassword}"
+    environment:
+      REDIS_PASSWORD: ${REDIS__PASSWORD:-redispassword}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  redisinsight:
+    container_name: redisinsight_container
+    image: redislabs/redisinsight:latest
+    environment:
+      REDISINSIGHT_AUTH: "false" # Set to "true" if you want to enable authentication
+    ports:
+      - "5540:5540"
+    networks:
+      - backend
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+    postgres:
+    pgadmin:
+    redis_data:
