@@ -148,9 +148,9 @@ class CompetitionSwapRepository(Repository):
             swap.id = model.id
         return competition_swaps
 
-    async def get_top_wallet_holder(
-        self, competition_id: int
-    ) -> Optional[TopWalletHolder]:
+    async def get_top_wallet_holders(
+        self, competition_id: int, top: int
+    ) -> list[TopWalletHolder]:
         result = await self.session.execute(
             select(
                 CompetitionSwapModel.wallet_address,
@@ -160,17 +160,20 @@ class CompetitionSwapRepository(Repository):
             .where(CompetitionSwapModel.competition_id == competition_id)
             .group_by(CompetitionSwapModel.wallet_address, CompetitionSwapModel.pair)
             .order_by(func.sum(CompetitionSwapModel.token_amount).desc())
-            .limit(1)
+            .limit(top)
         )
 
-        top_wallet = result.first()
+        top_wallets = result.all()
 
-        if not top_wallet:
-            return None
+        if not top_wallets:
+            return []
 
-        return TopWalletHolder(
-            competition_id=competition_id,
-            wallet_address=top_wallet.wallet_address,
-            total_amount=top_wallet.total_amount,
-            pair=top_wallet.pair,
-        )
+        return [
+            TopWalletHolder(
+                competition_id=competition_id,
+                wallet_address=top_wallet.wallet_address,
+                total_amount=top_wallet.total_amount,
+                pair=top_wallet.pair,
+            )
+            for top_wallet in top_wallets
+        ]
