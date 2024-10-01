@@ -48,7 +48,7 @@ async def create_competition(
 
 
 @router.get(
-    "/{competition_id}/top/{top}",
+    "/{channel_id}/top/{top}",
     responses={
         status.HTTP_200_OK: {"model": list[GetTopWalletHolderResponseSchema]},
         status.HTTP_400_BAD_REQUEST: {"model": ErrorResponseSchema},
@@ -57,7 +57,7 @@ async def create_competition(
 )
 @inject
 async def get_top_wallet_holders(
-    competition_id: int, top: int, service: FromDishka[CompetitionService]
+    channel_id: int, top: int, service: FromDishka[CompetitionService]
 ) -> list[GetTopWalletHolderResponseSchema]:
     """
     Return top top wallet holders for a given competition.
@@ -68,7 +68,9 @@ async def get_top_wallet_holders(
             detail={"error": "Top must be greater than 0"},
         )
 
-    top_wallet_holders = await service.get_top_wallet_holders(competition_id, top)
+    competition = await service.get_competition_by_channel_id(channel_id)
+
+    top_wallet_holders = await service.get_top_wallet_holders(competition.id, top)
 
     if not top_wallet_holders:
         raise HTTPException(

@@ -22,6 +22,10 @@ class CompetitionService:
     async def get_competition(self, competition_id: int) -> Optional[Competition]:
         return await self.competition_repository.get(competition_id)
     
+    async def get_competition_by_channel_id(self, channel_id: int) -> Optional[Competition]:
+        return await self.competition_repository.get_by_channel_id(channel_id)
+    
+    
     async def get_all_competitions(self) -> list[Competition]:
         return await self.competition_repository.get_all_active()
 

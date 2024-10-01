@@ -61,6 +61,26 @@ class CompetitionRepository(Repository):
             last_processed_datetime=model.last_processed_timestamp,
         )
 
+    async def get_by_channel_id(self, channel_id: int) -> Optional[Competition]:
+        model = await self.session.execute(
+            select(CompetitionModel).where(CompetitionModel.channel_id == channel_id)
+        )
+        result = model.scalars().first()
+
+        if result is None:
+            return None
+        return Competition(
+            id=result.id,
+            user_id=result.user_id,
+            channel_id=result.channel_id,
+            name=result.competition_name,
+            token_address=result.token_address,
+            start_date=result.start_date,
+            end_date=result.end_date,
+            winner_wallet=result.winner_wallet,
+            last_processed_datetime=result.last_processed_timestamp,
+        )
+
     async def get_all_active(self) -> list[Competition]:
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
         models = await self.session.execute(
