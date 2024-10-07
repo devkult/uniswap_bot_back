@@ -29,6 +29,12 @@ class CompetitionService:
     async def get_all_competitions(self) -> list[Competition]:
         return await self.competition_repository.get_all_active()
 
+    async def delete_competition(self, competition_id: int) -> None:
+        await self.competition_repository.delete(competition_id)
+
+    async def update_competition(self, competition: Competition) -> None:
+        await self.competition_repository.update(competition)
+
     async def mark_competition_as_completed(self, competition_id: int, winner_address: str) -> None:
         await self.competition_repository.mark_as_completed(id=competition_id, winner_address=winner_address)
     
@@ -54,7 +60,7 @@ class CompetitionService:
         return competition_swaps
 
     async def get_top_wallet_holder(self, competition_id: int) -> Optional[TopWalletHolder]:
-        return await self.competition_swap_repository.get_top_wallet_holders(competition_id=competition_id, top=1)
+        return (await self.competition_swap_repository.get_top_wallet_holders(competition_id=competition_id, top=1))[0]
     
     async def get_top_wallet_holders(self, competition_id: int, top: int) -> list[TopWalletHolder]:
         return await self.competition_swap_repository.get_top_wallet_holders(competition_id=competition_id, top=top)

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, select, func
+from sqlalchemy import and_, delete, select, func
 from dataclasses import dataclass
 from entity.uniswap import Competition, CompetitionSwap, TopWalletHolder
 from gateway.models import CompetitionModel, CompetitionSwapModel
@@ -16,32 +16,14 @@ class Repository:
 class CompetitionRepository(Repository):
 
     async def add(self, competition: Competition) -> Competition:
-        model = CompetitionModel(
-            user_id=competition.user_id,
-            competition_name=competition.name,
-            token_address=competition.token_address,
-            start_date=competition.start_date,
-            end_date=competition.end_date,
-            winner_wallet=competition.winner_wallet,
-            channel_id=competition.channel_id,
-        )
+        model = self._competition_to_model(competition)
         self.session.add(model)
         await self.session.commit()
         competition.id = model.id
         return competition
 
     async def update(self, competition: Competition) -> Optional[Competition]:
-        model = CompetitionModel(
-            id=competition.id,
-            user_id=competition.user_id,
-            competition_name=competition.name,
-            token_address=competition.token_address,
-            start_date=competition.start_date,
-            end_date=competition.end_date,
-            winner_wallet=competition.winner_wallet,
-            channel_id=competition.channel_id,
-            last_processed_timestamp=competition.last_processed_datetime,
-        )
+        model = self._competition_to_model(competition)
         await self.session.merge(model)
         await self.session.commit()
 
@@ -49,37 +31,20 @@ class CompetitionRepository(Repository):
         model = await self.session.get(CompetitionModel, id)
         if model is None:
             return None
-        return Competition(
-            id=model.id,
-            user_id=model.user_id,
-            channel_id=model.channel_id,
-            name=model.competition_name,
-            token_address=model.token_address,
-            start_date=model.start_date,
-            end_date=model.end_date,
-            winner_wallet=model.winner_wallet,
-            last_processed_datetime=model.last_processed_timestamp,
-        )
+        return self._model_to_competition(model)
+
+    async def delete(self, id: int) -> None:
+        await self.session.execute(delete(CompetitionModel).where(CompetitionModel.id == id))
+        await self.session.commit()
 
     async def get_by_channel_id(self, channel_id: int) -> Optional[Competition]:
         model = await self.session.execute(
             select(CompetitionModel).where(CompetitionModel.channel_id == channel_id)
         )
         result = model.scalars().first()
-
         if result is None:
             return None
-        return Competition(
-            id=result.id,
-            user_id=result.user_id,
-            channel_id=result.channel_id,
-            name=result.competition_name,
-            token_address=result.token_address,
-            start_date=result.start_date,
-            end_date=result.end_date,
-            winner_wallet=result.winner_wallet,
-            last_processed_datetime=result.last_processed_timestamp,
-        )
+        return self._model_to_competition(result)
 
     async def get_all_active(self) -> list[Competition]:
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -91,20 +56,7 @@ class CompetitionRepository(Repository):
                 )
             )
         )
-        return [
-            Competition(
-                id=model.id,
-                user_id=model.user_id,
-                channel_id=model.channel_id,
-                name=model.competition_name,
-                token_address=model.token_address,
-                start_date=model.start_date,
-                end_date=model.end_date,
-                winner_wallet=model.winner_wallet,
-                last_processed_datetime=model.last_processed_timestamp,
-            )
-            for model in models.scalars().all()
-        ]
+        return [self._model_to_competition(model) for model in models.scalars().all()]
 
     async def get_all_expired(self) -> list[Competition]:
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -116,26 +68,45 @@ class CompetitionRepository(Repository):
                 )
             )
         )
-        return [
-            Competition(
-                id=model.id,
-                user_id=model.user_id,
-                channel_id=model.channel_id,
-                name=model.competition_name,
-                token_address=model.token_address,
-                start_date=model.start_date,
-                end_date=model.end_date,
-                winner_wallet=model.winner_wallet,
-                last_processed_datetime=model.last_processed_timestamp,
-            )
-            for model in result.scalars().all()
-        ]
+        return [self._model_to_competition(model) for model in result.scalars().all()]
 
     async def mark_as_completed(self, id: int, winner_address: str) -> None:
         model = await self.session.get(CompetitionModel, id)
         model.is_completed = True
         model.winner_wallet = winner_address
         await self.session.commit()
+
+    @staticmethod
+    def _competition_to_model(competition: Competition) -> CompetitionModel:
+        return CompetitionModel(
+            id=competition.id,
+            user_id=competition.user_id,
+            competition_name=competition.name,
+            token_address=competition.token_address,
+            start_date=competition.start_date,
+            end_date=competition.end_date,
+            winner_wallet=competition.winner_wallet,
+            channel_id=competition.channel_id,
+            last_processed_timestamp=competition.last_processed_datetime,
+            winner_prize=competition.winner_prize,
+            is_completed=competition.is_completed,
+        )
+
+    @staticmethod
+    def _model_to_competition(model: CompetitionModel) -> Competition:
+        return Competition(
+            id=model.id,
+            user_id=model.user_id,
+            channel_id=model.channel_id,
+            name=model.competition_name,
+            token_address=model.token_address,
+            start_date=model.start_date,
+            end_date=model.end_date,
+            winner_wallet=model.winner_wallet,
+            last_processed_datetime=model.last_processed_timestamp,
+            is_completed=model.is_completed,
+            winner_prize=model.winner_prize,
+        )
 
 
 @dataclass

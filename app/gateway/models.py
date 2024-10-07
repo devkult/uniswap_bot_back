@@ -26,6 +26,9 @@ class CompetitionModel(Base):
     last_processed_timestamp = Column(DateTime, server_default=func.now())
     user_id = Column(BigInteger)
     is_completed = Column(Boolean, default=False)
+    winner_prize = Column(Float, nullable=True)
+
+    swaps = relationship("CompetitionSwapModel", cascade="all, delete", backref="competition")
 
 
 class CompetitionSwapModel(Base):
@@ -34,7 +37,7 @@ class CompetitionSwapModel(Base):
     __tablename__ = "competition_swaps"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    competition_id = Column(Integer, ForeignKey("competitions.id"), nullable=False)
+    competition_id = Column(Integer, ForeignKey("competitions.id", ondelete="CASCADE"), nullable=False)
     wallet_address = Column(String, nullable=False)
     token_amount = Column(Float, nullable=False)
     weth_amount = Column(Float, nullable=False)

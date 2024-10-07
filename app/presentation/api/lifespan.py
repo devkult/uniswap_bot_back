@@ -150,6 +150,6 @@ async def process_top_wallet_holders() -> None:
                         await redis.delete(f"top_wallet_holder:{competition.id}")
 
         except Exception as e:
-            logger.error(f"Error occurred in process top wallet holders loop: {e}")
+            logger.exception(f"Error occurred in process top wallet holders loop: {e}")
 
         await asyncio.sleep(60)

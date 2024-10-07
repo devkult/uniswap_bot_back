@@ -37,6 +37,8 @@ class Competition:
     last_processed_datetime: Optional[datetime] = field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+    winner_prize: Optional[float] = None
+    is_completed: bool = False
 
     @property
     def timestamp(self):

@@ -7,13 +7,32 @@ from entity.uniswap import Competition
 from presentation.api.uniswap.competitions.schemas import (
     CreateCompetitionRequestSchema,
     CreateCompetitionResponseSchema,
+    DeleteCompetitionResponseSchema,
+    GetCompetitionResponseSchema,
     GetTopWalletHolderResponseSchema,
+    PatchCompetitionRequestSchema,
 )
 from presentation.api.uniswap.exc import ErrorResponseSchema
 from service.competition_service import CompetitionService
 
 
 router = APIRouter(tags=["competitions"])
+
+@router.get(
+        "/all",
+        responses={
+            status.HTTP_200_OK: {"model": list[GetCompetitionResponseSchema]},
+        },
+)
+@inject
+async def get_all_competitions(
+    service: FromDishka[CompetitionService]
+) -> list[GetCompetitionResponseSchema]:
+    """
+    Get all competitions.
+    """
+    competitions = await service.get_all_competitions()
+    return list(map(GetCompetitionResponseSchema.from_entity, competitions))
 
 
 @router.post(
@@ -45,6 +64,93 @@ async def create_competition(
     created_competition = await competition_service.add_competition(competition)
 
     return CreateCompetitionResponseSchema(competition_id=created_competition.id)
+
+
+@router.get(
+    "/{channel_id}",
+    responses={
+        status.HTTP_200_OK: {"model": GetCompetitionResponseSchema},
+        status.HTTP_404_NOT_FOUND: {"model": ErrorResponseSchema},
+    },
+)
+@inject
+async def get_competition_by_channel_id(
+    channel_id: int, service: FromDishka[CompetitionService]
+) -> GetCompetitionResponseSchema:
+    """
+    Get competition by channel id.
+    """
+    competition = await service.get_competition_by_channel_id(channel_id)
+    if not competition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "Competition not found"},
+        )
+    return GetCompetitionResponseSchema.from_entity(competition)
+
+
+
+@router.delete(
+    "/{channel_id}",
+    responses={
+        status.HTTP_200_OK: {"model": DeleteCompetitionResponseSchema},
+        status.HTTP_404_NOT_FOUND: {"model": ErrorResponseSchema},
+    },
+)
+@inject
+async def delete_competition_by_channel_id(
+    channel_id: int, service: FromDishka[CompetitionService]
+) -> DeleteCompetitionResponseSchema:
+    """
+    Delete competition by channel id.
+    """
+    competition = await service.get_competition_by_channel_id(channel_id)
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "Competition not found"},
+        )
+
+    await service.delete_competition(competition_id=competition.id)
+
+    return DeleteCompetitionResponseSchema.from_entity(competition)
+
+
+@router.patch(
+    "/{channel_id}",
+    responses={
+        status.HTTP_200_OK: {"model": GetCompetitionResponseSchema},
+        status.HTTP_404_NOT_FOUND: {"model": ErrorResponseSchema},
+    },
+)
+@inject
+async def update_competition_by_channel_id(
+    channel_id: int,
+    patch_request: PatchCompetitionRequestSchema,
+    service: FromDishka[CompetitionService],
+) -> GetCompetitionResponseSchema:
+    """
+    Update competition by channel id.
+    """
+    competition = await service.get_competition_by_channel_id(channel_id)
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "Competition not found"},
+        )
+
+    if patch_request.name is not None:
+        competition.name = patch_request.name
+    if patch_request.start_date is not None:
+        competition.start_date = patch_request.start_date
+    if patch_request.end_date is not None:
+        competition.end_date = patch_request.end_date
+    if patch_request.winner_prize is not None:
+        competition.winner_prize = patch_request.winner_prize
+
+    await service.update_competition(competition)
+
+    return GetCompetitionResponseSchema.from_entity(competition)
 
 
 @router.get(
