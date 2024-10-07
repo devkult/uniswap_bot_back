@@ -35,7 +35,7 @@ class CompetitionService:
     async def update_competition(self, competition: Competition) -> None:
         await self.competition_repository.update(competition)
 
-    async def mark_competition_as_completed(self, competition_id: int, winner_address: str) -> None:
+    async def mark_competition_as_completed(self, competition_id: int, winner_address: Optional[str]) -> None:
         await self.competition_repository.mark_as_completed(id=competition_id, winner_address=winner_address)
     
     async def get_all_competitions_that_expired(self) -> list[Competition]:

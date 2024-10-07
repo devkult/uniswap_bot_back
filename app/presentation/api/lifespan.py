@@ -144,7 +144,7 @@ async def process_top_wallet_holders() -> None:
                                 text=generate_text_from_top_wallet_holder(competition, top),
                                 photo_url=photo_url
                         )
-                        await service.mark_competition_as_completed(competition.id, top.wallet_address)
+                        await service.mark_competition_as_completed(competition.id, top.wallet_address if top else None)
 
                     finally:
                         await redis.delete(f"top_wallet_holder:{competition.id}")
