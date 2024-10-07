@@ -60,7 +60,10 @@ class CompetitionService:
         return competition_swaps
 
     async def get_top_wallet_holder(self, competition_id: int) -> Optional[TopWalletHolder]:
-        return (await self.competition_swap_repository.get_top_wallet_holders(competition_id=competition_id, top=1))[0]
+        result = await self.competition_swap_repository.get_top_wallet_holders(competition_id=competition_id, top=1)
+        if result:
+            return result[0]
+        return None
     
     async def get_top_wallet_holders(self, competition_id: int, top: int) -> list[TopWalletHolder]:
         return await self.competition_swap_repository.get_top_wallet_holders(competition_id=competition_id, top=top)
