@@ -31,7 +31,7 @@ class GetCompetitionResponseSchema(BaseModel):
     token_address: str
     start_date: datetime
     end_date: datetime
-    winner_wallet: str
+    winner_wallet: Optional[str]
     channel_id: int
     last_processed_datetime: datetime
     is_completed: bool
