@@ -35,7 +35,7 @@ class Competition:
     winner_wallet: Optional[str] = None
     channel_id: int
     last_processed_datetime: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now().astimezone(timezone.utc).replace(tzinfo=None)
     )
     winner_prize: Optional[float] = None
     is_completed: bool = False
