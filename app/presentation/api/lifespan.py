@@ -93,7 +93,7 @@ async def fetch_updates_in_background() -> None:
                 await asyncio.gather(*coro)
 
         except Exception as e:
-            logger.error(f"Error occurred in fetch updates loop: {e}")
+            logger.exception(f"Error occurred in fetch updates loop: {e}")
 
         await asyncio.sleep(30)
 
