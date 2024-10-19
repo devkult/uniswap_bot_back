@@ -59,6 +59,10 @@ class UniSwapAPIClient:
         )
         response.raise_for_status()
         data = response.json()
+        
+        if "data" not in data or "swaps" not in data["data"]:
+            raise FetchingPoolsError(message=pprint.pformat(data))
+
         swaps = [
             Swap(
                 sender=swap["sender"],
