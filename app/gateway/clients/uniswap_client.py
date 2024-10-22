@@ -59,6 +59,7 @@ class UniSwapAPIClient:
         )
         response.raise_for_status()
         data = response.json()
+        logger.info(f"Response data: {pprint.pformat(data)}")
         
         if "data" not in data or "swaps" not in data["data"]:
             logger.error(f"Response data: {pprint.pformat(data)}")
